@@ -110,4 +110,14 @@ class Training
         return $this->hypothesis;
     }
 
+    /**
+     * @param ValueInterface
+     * @return ValueInterface
+     */
+    public function predict(ValueInterface $value)
+    {
+        $normalizedValue = $this->normalization->normalizeValue($value, $this->normalizationCoefficient);
+        return $this->hypothesis->calculate($this->algorithmCoefficient, $normalizedValue);
+    }
+
 }

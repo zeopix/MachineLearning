@@ -22,6 +22,7 @@ composer require zeopix/machine-learning
 #### Train your dataset
 ```
 use Zeopix\MachineLearning\Application\Service\LinearRegressionService
+use Zeopix\MachineLearning\Domain\Model\Value\VectorValue;
 
 $linearRegressionService = new LinearRegressionService();
 $data = [
@@ -30,6 +31,6 @@ $data = [
 ];
 $training = $linearRegressionService->train($data);
 
-$prediction = $training->predict([8,12]);
+$prediction = $training->predict(new VectorValue([8,12]));
 ```
 

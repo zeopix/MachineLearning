@@ -30,7 +30,6 @@ $data = [
 ];
 $training = $linearRegressionService->train($data);
 
-//@todo, prediction part is not implemented yet
 $prediction = $training->predict([8,12]);
 ```
 

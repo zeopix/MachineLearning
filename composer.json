@@ -6,7 +6,7 @@
   "homepage": "http://github.com/zeopix/machine-learning",
   "license": "Apache-2.0",
   "require": {
-    "php": ">=5.4"
+    "php": ">=5.5.9"
   },
   "require-dev": {
     "phpunit/phpunit": "~4"

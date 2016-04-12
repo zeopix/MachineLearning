@@ -1,0 +1,27 @@
+{
+  "name": "zeopix/machine-learning",
+  "type": "library",
+  "description": "Simple Machine Learning POO Implementation",
+  "keywords": ["machine learning", "maths", "machine", "learning"],
+  "homepage": "http://github.com/zeopix/machine-learning",
+  "license": "Apache-2.0",
+  "require": {
+    "php": ">=5.4"
+  },
+  "require-dev": {
+    "phpunit/phpunit": "~4"
+  },
+  "autoload": {
+    "psr-0": {
+      "Zeopix\\": "src/"
+    },
+    "classmap": [
+      "src/MachineLearning/"
+    ]
+  },
+  "extra": {
+    "branch-alias": {
+      "dev-master": "1.x-dev"
+    }
+  }
+}

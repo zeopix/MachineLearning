@@ -10,7 +10,7 @@ class VectorValue implements ValueInterface
     protected $value;
 
     /**
-     * @param float[] $value
+     * @param float[]|array<integer,array> $value
      */
     public function __construct($value)
     {
@@ -31,7 +31,8 @@ class VectorValue implements ValueInterface
     public function scalar(ValueInterface $value)
     {
         $result = 0;
-        for ($i=0; $i<count($this->value); $i++) {
+        $columns = count($this->value);
+        for ($i=0; $i<$columns; $i++) {
             $result += $this->value[$i]*$value->getValue()[$i];
         }
         return $result;

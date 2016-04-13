@@ -12,7 +12,7 @@ interface ValueInterface
     /**
      * Return scalar product between values
      * @param ValueInterface $value
-     * @return ValueInterface
+     * @return double
      * @throws \DomainException
      */
     public function scalar(ValueInterface $value);

@@ -5,6 +5,7 @@ namespace MachineLearning\Application\Algorithm;
 use MachineLearning\Domain\Exception\DivergenceException;
 use MachineLearning\Domain\Model\Dataset;
 use MachineLearning\Domain\Hypothesis\HypothesisInterface;
+use MachineLearning\Domain\Model\Result;
 use MachineLearning\Domain\Model\ValueInterface;
 use MachineLearning\Domain\Model\Value\VectorValue;
 
@@ -22,25 +23,25 @@ class GradientDescendent implements AlgorithmInterface
     protected $hypothesis;
 
     /**
-     * @var float
+     * @var double
      */
     protected $learningRate;
 
     /**
-     * @var float
+     * @var double
      */
     protected $convergenceCriteria;
 
     /**
-     * @var float
+     * @var double
      */
     protected $divergenceCriteria;
 
     /**
      * @param HypothesisInterface $hypothesis
-     * @param float $learningRate
-     * @param float $convergenceCriteria
-     * @param int $divergenceCriteria
+     * @param double $learningRate
+     * @param double $convergenceCriteria
+     * @param double $divergenceCriteria
      */
     public function __construct(
         HypothesisInterface $hypothesis,
@@ -49,9 +50,9 @@ class GradientDescendent implements AlgorithmInterface
         $divergenceCriteria = self::DEFAULT_DIVERGENCE_CRITERIA
     ) {
         $this->hypothesis = $hypothesis;
-        $this->learningRate = $learningRate;
-        $this->convergenceCriteria = $convergenceCriteria;
-        $this->divergenceCriteria = $divergenceCriteria;
+        $this->learningRate = (double) $learningRate;
+        $this->convergenceCriteria = (double) $convergenceCriteria;
+        $this->divergenceCriteria = (double) $divergenceCriteria;
     }
 
     /**
@@ -72,41 +73,13 @@ class GradientDescendent implements AlgorithmInterface
         $incrementVector = array_fill(0, $features+1, 0);
 
         while(!$convergence && !$divergence) {
-            $coefficient = new VectorValue($coefficientVector);
-
-            $costVector = array_fill(0, $features+1, 0);
-
-            foreach ($dataset as $result) {
-                $firstOrderIncrement = (
-                        (float) $this->hypothesis->calculate(
-                            $coefficient,
-                            $result->getIndependentVariable()
-                        )->getValue()
-                        - (float) $result->getDependentVariable()->getValue()
-                    );
-                $costVector[0] += $firstOrderIncrement;
-
-                for ($j = 1; $j < $features+1; $j++) {
-                    $costVector[$j] += $firstOrderIncrement
-                        * (float) $this->hypothesis->derivative(
-                            $coefficient,
-                            $result->getIndependentVariable(),
-                            $j-1
-                        )->getValue();
-                }
-            }
-
-            for ($j = 0; $j < $features+1; $j++) {
-                $incrementVector[$j] = $this->learningRate * -(1 / ($total)) * $costVector[$j];
-            }
-
-
-            $convergence = (bool) (abs(array_sum($incrementVector)) < $this->convergenceCriteria);
-            $divergence = (bool) (abs(array_sum($incrementVector)) > $this->divergenceCriteria);
-
-            for ($j = 0; $j < $features+1; $j++) {
-                $coefficientVector[$j] += $incrementVector[$j];
-            }
+            list($convergence, $divergence, $coefficientVector) = $this->doStep(
+                $dataset,
+                $coefficientVector,
+                $features,
+                $total,
+                $incrementVector
+            );
         }
 
         if ($divergence) {
@@ -114,6 +87,64 @@ class GradientDescendent implements AlgorithmInterface
         }
 
         return new VectorValue($coefficientVector);
+    }
+
+    /**
+     * @param Dataset $dataset
+     * @param $coefficientVector
+     * @param $features
+     * @param $total
+     * @param $incrementVector
+     * @return array
+     */
+    protected function doStep(Dataset $dataset, $coefficientVector, $features, $total, $incrementVector)
+    {
+        $coefficient = new VectorValue($coefficientVector);
+        $costVector = array_fill(0, $features + 1, 0);
+
+        foreach ($dataset as $result) {
+            $costVector = $this->calculateStepCost($features, $coefficient, $result, $costVector);
+        }
+
+        for ($j = 0; $j < $features + 1; $j++) {
+            $incrementVector[$j] = $this->learningRate * -(1 / ($total)) * $costVector[$j];
+        }
+
+        $convergence = (bool)(abs(array_sum($incrementVector)) < $this->convergenceCriteria);
+        $divergence = (bool)(abs(array_sum($incrementVector)) > $this->divergenceCriteria);
+
+        for ($j = 0; $j < $features + 1; $j++) {
+            $coefficientVector[$j] += $incrementVector[$j];
+        }
+        return array($convergence, $divergence, $coefficientVector);
+    }
+
+    /**
+     * @param int $features
+     * @param ValueInterface $coefficient
+     * @param Result $result
+     * @param array $costVector
+     */
+    protected function calculateStepCost($features, ValueInterface $coefficient, Result $result, array $costVector)
+    {
+        $firstOrderIncrement = (
+            (float)$this->hypothesis->calculate(
+                $coefficient,
+                $result->getIndependentVariable()
+            )->getValue()
+            - (float)$result->getDependentVariable()->getValue()
+        );
+        $costVector[0] += $firstOrderIncrement;
+
+        for ($j = 1; $j < $features + 1; $j++) {
+            $costVector[$j] += $firstOrderIncrement
+                * (float)$this->hypothesis->derivative(
+                    $coefficient,
+                    $result->getIndependentVariable(),
+                    $j - 1
+                )->getValue();
+        }
+        return $costVector;
     }
 
 }

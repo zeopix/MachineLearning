@@ -23,10 +23,8 @@ class MeanScaleNormalization extends AbstractNormalization
         $rawCoefficient = $coefficient->getValue();
         $rawValue = $value->getValue();
 
-        //@todo we could validate if value and coefficient have same same dimension
-        //should be done in a upper layer, in order not to execute it every row
-
-        for ($i=0; $i<count($rawValue); $i++) {
+        $numberColumns = count($rawValue);
+        for ($i=0; $i<$numberColumns; $i++) {
             $rawValue[$i] =
                 (
                     $rawValue[$i] - $rawCoefficient[static::COEFFICIENT_AVERAGE][$i]
@@ -45,28 +43,25 @@ class MeanScaleNormalization extends AbstractNormalization
     public function calculateCoefficient(Dataset $data)
     {
         $numberFeatures = count($data->first()->getIndependentVariable()->getValue());
+        $numberRows = count($data);
 
         $featuresMinimumValue = [];
         $featuresMaximumValue = [];
+        $featuresSum = array_fill(0, $numberFeatures, 0);
         $featuresAverage = array_fill(0, $numberFeatures, 0);
         $featuresRange = array_fill(0, $numberFeatures, 0);
 
         //@todo solve this in another way...tremendous
-        foreach ($data as $row) {
-            $features = $row->getIndependentVariable()->getValue();
-            for ($i = 0; $i < count($features); $i++) {
-                if (!isset($featuresMaximumValue[$i]) || $featuresMaximumValue[$i] < $features[$i]) {
-                    $featuresMaximumValue[$i] = $features[$i];
-                }
-                if (!isset($featuresMinimumValue[$i]) || $featuresMinimumValue[$i] > $features[$i]) {
-                    $featuresMinimumValue[$i] = $features[$i];
-                }
-                $featuresAverage[$i] = $featuresAverage[$i]+$features[$i];
-            }
-        }
+        list($featuresMaximumValue, $featuresMinimumValue, $featuresSum) = $this->prepareNormalizationData(
+            $data,
+            $numberFeatures,
+            $featuresMaximumValue,
+            $featuresMinimumValue,
+            $featuresSum
+        );
 
-        foreach ($featuresAverage as $i => $featureAverage) {
-            $featuresAverage[$i] = $featureAverage / count($data);
+        foreach ($featuresSum as $i => $featureSum) {
+            $featuresAverage[$i] = $featureSum / $numberRows;
             $featuresRange[$i] = ($featuresMaximumValue[$i] - $featuresMinimumValue[$i]) > 0 ?
                 ($featuresMaximumValue[$i] - $featuresMinimumValue[$i])
                 : 1;
@@ -76,6 +71,31 @@ class MeanScaleNormalization extends AbstractNormalization
             static::COEFFICIENT_AVERAGE => $featuresAverage,
             static::COEFFICIENT_RANGE => $featuresRange
         ]);
+    }
+
+    /**
+     * @param Dataset $data
+     * @param $numberFeatures
+     * @param $featuresMaximumValue
+     * @param $featuresMinimumValue
+     * @param $featuresAverage
+     * @return array
+     */
+    protected function prepareNormalizationData(Dataset $data, $numberFeatures, $featuresMaximumValue, $featuresMinimumValue, $featuresSum)
+    {
+        foreach ($data as $row) {
+            $features = $row->getIndependentVariable()->getValue();
+            for ($i = 0; $i < $numberFeatures; $i++) {
+                if (!isset($featuresMaximumValue[$i]) || $featuresMaximumValue[$i] < $features[$i]) {
+                    $featuresMaximumValue[$i] = $features[$i];
+                }
+                if (!isset($featuresMinimumValue[$i]) || $featuresMinimumValue[$i] > $features[$i]) {
+                    $featuresMinimumValue[$i] = $features[$i];
+                }
+                $featuresSum[$i] = $featuresSum[$i] + $features[$i];
+            }
+        }
+        return array($featuresMaximumValue, $featuresMinimumValue, $featuresSum);
     }
 
 }
